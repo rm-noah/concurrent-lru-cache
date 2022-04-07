@@ -11,27 +11,19 @@ public class ForgettingMap {
      * order of insertion but we'd be disallowing duplicates which isn't
      * specified in the spec.
      */
-    Set<Integer> cache;
-    int capacity;
+    private Set<Integer> cache;
 
-    ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private int capacity;
+
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public ForgettingMap(int capacity) {
         this.capacity = capacity;
         this.cache = new LinkedHashSet<>(capacity);
     }
 
-    public void add(int association) {
-        lock.writeLock().lock();
-        try {
-            if (cache.size() == capacity) {
-                // Remove least used key
-                cache.remove(cache.iterator().next());
-            }
-            cache.add(association);
-        } finally {
-            lock.writeLock().unlock();
-        }
+    public int size() {
+        return cache.size();
     }
 
     public Optional<Integer> find(Integer key) {
@@ -56,5 +48,22 @@ public class ForgettingMap {
             // Must always unlock in the `finally` block to prevent deadlock
             lock.readLock().unlock();
         }
+    }
+
+    public void add(int association) {
+        lock.writeLock().lock();
+        try {
+            if (cache.size() == capacity) {
+                // Remove least used key
+                int stale = cache.iterator().next();
+                cache.remove(stale);
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    public List<Integer> contents() {
+        return new ArrayList<>(cache);
     }
 }
