@@ -17,7 +17,7 @@ public class MapTest {
         cache.add(5);
         cache.add(6);
 
-        Assert.assertEquals(cache.size(), 5);
+        Assert.assertEquals(5, cache.size());
         Assert.assertTrue(cache.find(1).isEmpty());
         Assert.assertNotNull(cache.find(6));
     }
@@ -36,9 +36,31 @@ public class MapTest {
 
         cache.add(6);
 
-        Assert.assertEquals(cache.size(), 5);
+        Assert.assertEquals(5, cache.size());
         Assert.assertTrue(cache.find(2).isEmpty());
         Assert.assertFalse(cache.find(1).isEmpty());
+    }
+
+    @Test
+    public void testRemovingLeastInterestingValue() {
+        ForgettingMap cache = new ForgettingMap(5);
+
+        cache.add(1);
+        cache.add(2);
+        cache.add(3);
+        cache.add(4);
+        cache.add(5);
+
+        cache.find(1);
+        cache.find(1);
+        cache.find(1);
+
+        cache.add(6);
+
+        Assert.assertFalse(cache.find(2).isPresent());
+        Assert.assertEquals(4, cache.getPopularity(1));
+        // Find increments "hits" count, order of operations is important here
+        Assert.assertTrue(cache.find(1).isPresent());
     }
 
     @Test
@@ -51,14 +73,24 @@ public class MapTest {
             cache.add(3);
             cache.add(4);
             cache.add(5);
+            cache.add(6);
+            cache.add(7);
+            cache.add(8);
 
-            return cache.contents().toString();
+            return "Executed Callable task";
         };
 
         List<Callable<String>> tasks = Arrays.asList(task, task, task);
         ExecutorService service = Executors.newFixedThreadPool(5);
         service.invokeAll(tasks);
 
-        System.out.println(cache.contents());
+        Assert.assertFalse(cache.find(1).isPresent());
+        Assert.assertFalse(cache.find(2).isPresent());
+        Assert.assertFalse(cache.find(3).isPresent());
+        Assert.assertTrue(cache.find(4).isPresent());
+        Assert.assertTrue(cache.find(5).isPresent());
+        Assert.assertTrue(cache.find(6).isPresent());
+        Assert.assertTrue(cache.find(7).isPresent());
+        Assert.assertTrue(cache.find(8).isPresent());
     }
 }

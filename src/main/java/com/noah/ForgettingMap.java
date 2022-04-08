@@ -6,27 +6,38 @@ import java.util.concurrent.locks.*;
 public class ForgettingMap {
 
     /**
-     * Using a set allows us to maintain the order of insertion
-     * that a list or array wouldn't. HashSet/HashMap would maintain
-     * order of insertion but we'd be disallowing duplicates which isn't
-     * specified in the spec.
+     * Using a LinkedHashSet remembers the order in which the elements are
+     * added to the set and returns the elemnents in that order. Given it's a
+     * Hash structure is provides fast lookup.
      */
-    private Set<Integer> cache;
+    private final LinkedHashSet<Integer> set;
 
-    private int capacity;
+    /**
+     * Using a HashMap to map the popularity of keys means we can easily find
+     * and increment the hits with a complexity of O(n)
+     */
+    private final HashMap<Integer, Integer> hits;
+
+    private final int capacity;
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     public ForgettingMap(int capacity) {
         this.capacity = capacity;
-        this.cache = new LinkedHashSet<>(capacity);
+        this.set = new LinkedHashSet<>(capacity);
+        this.hits = new HashMap<>();
     }
 
     public int size() {
-        return cache.size();
+        lock.readLock().lock();
+        try {
+            return set.size();
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
-    public Optional<Integer> find(Integer key) {
+    public Optional<Integer> find(int key) {
         // For concurrent projects we'll lock the read
         // Alternatively we could use the synchronised keyword which would
         // work fine but manually locking/unlocking gives us more control.
@@ -37,10 +48,10 @@ public class ForgettingMap {
             // "null" could work, but it depends on what the project uses.
             Optional<Integer> record = Optional.empty();
 
-            if (cache.contains(key)) {
-                // Helps us keep the most recently used key at the "top" of the set
-                cache.remove(key);
-                cache.add(key);
+            if (set.contains(key)) {
+                if (hits.containsKey(key)) {
+                    hits.put(key, hits.get(key) + 1);
+                }
                 record = Optional.of(key);
             }
             return record;
@@ -51,19 +62,47 @@ public class ForgettingMap {
     }
 
     public void add(int association) {
+        // Locking the write operation to prevent other threads overwriting
         lock.writeLock().lock();
         try {
-            if (cache.size() == capacity) {
+            if (set.size() == capacity) {
                 // Remove least used key
-                int stale = cache.iterator().next();
-                cache.remove(stale);
+                Optional<Integer> stale = findLeastFrequent();
+                if (stale.isPresent()) {
+                    set.remove(stale.get());
+                    hits.remove(stale.get());
+                }
             }
+            set.add(association);
+            hits.put(association, 1);
         } finally {
             lock.writeLock().unlock();
         }
     }
 
-    public List<Integer> contents() {
-        return new ArrayList<>(cache);
+    /**
+     * Helper method for testing
+     */
+    public int getPopularity(int key) {
+        return hits.getOrDefault(key, 0);
+    }
+
+    /**
+     * Finds the key with the lowest number of hits. Returns the first occurrence
+     * if two or more keys have the same amount of hits.
+     *
+     * @return Integer to remove, else an empty Optional
+     */
+    private Optional<Integer> findLeastFrequent() {
+        lock.readLock().lock();
+        try {
+            Optional<Integer> min = Optional.empty();
+            if (hits.isEmpty()) {
+                return min;
+            }
+            return set.stream().min(Comparator.comparing(hits::get));
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 }
