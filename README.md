@@ -14,6 +14,9 @@ This implementation also introduces an extension of the "Least-Reused" part of t
 structure will track the number of times an element is accessed. Instead of removing the element at the bottom of the list this pattern will
 remove the least frequently-accessed element. The more an element is accessed, the lower priority it is when being removed.
 
-## Project Structure
+## Installation
 
-Project is built using Maven to provide the JUnit dependency.
+This project is built using Maven and dependencies are installed through that.
+
+To install dependencies navigate to the repository path in your command line client and run
+`mvn install`

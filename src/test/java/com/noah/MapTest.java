@@ -84,6 +84,15 @@ public class MapTest {
         ExecutorService service = Executors.newFixedThreadPool(5);
         service.invokeAll(tasks);
 
+        cache.add(1);
+        cache.add(2);
+        cache.add(3);
+        cache.add(4);
+        cache.add(5);
+        cache.add(6);
+        cache.add(7);
+        cache.add(8);
+
         Assert.assertFalse(cache.find(1).isPresent());
         Assert.assertFalse(cache.find(2).isPresent());
         Assert.assertFalse(cache.find(3).isPresent());
