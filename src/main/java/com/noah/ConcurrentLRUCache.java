@@ -70,7 +70,6 @@ public class ConcurrentLRUCache<T> {
      * @param association Element to add to the cache
      */
     public synchronized void add(T association) {
-        System.out.println("Adding " + association);
         if (set.size() == capacity) {
             // Remove least used key
             Optional<T> stale = findLeastFrequent();
@@ -96,7 +95,7 @@ public class ConcurrentLRUCache<T> {
      *
      * @return Integer to remove, else an empty Optional
      */
-    private Optional<T> findLeastFrequent() {
+    private synchronized Optional<T> findLeastFrequent() {
         Optional<T> min = Optional.empty();
         if (hits.isEmpty()) {
             return min;
