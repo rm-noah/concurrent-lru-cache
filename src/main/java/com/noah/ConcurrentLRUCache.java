@@ -3,6 +3,13 @@ package com.noah;
 import java.util.*;
 import java.util.concurrent.locks.*;
 
+/**
+ * Concurrent LRU cache stores a hash set of the given type
+ * and removes the least frequently accessed element when the cache
+ * is full.
+ *
+ * @param <T> Type of elements stored in LinkedHashSet
+ */
 public class ConcurrentLRUCache<T> {
 
     /**
@@ -14,7 +21,7 @@ public class ConcurrentLRUCache<T> {
 
     /**
      * Using a HashMap to map the popularity of keys means we can easily find
-     * and increment the hits with a complexity of O(n)
+     * and increment the hits with a time complexity of O(n)
      */
     private final HashMap<T, Integer> hits;
 
@@ -28,6 +35,11 @@ public class ConcurrentLRUCache<T> {
         this.hits = new HashMap<>();
     }
 
+    /**
+     * Returns the size of the current LinkedHashSet
+     *
+     * @return Size of cache
+     */
     public int size() {
         lock.readLock().lock();
         try {
@@ -37,6 +49,12 @@ public class ConcurrentLRUCache<T> {
         }
     }
 
+    /**
+     * Searches the cache for the given element
+     *
+     * @param key Desired element
+     * @return Optional object containing a key if the key exists in the cache, else an empty Optional
+     */
     public Optional<T> find(T key) {
         // For concurrent projects we'll lock the read
         // Alternatively we could use the synchronised keyword which would
@@ -63,6 +81,11 @@ public class ConcurrentLRUCache<T> {
         }
     }
 
+    /**
+     * Adds an element to the cache
+     *
+     * @param association Element to add to the cache
+     */
     public void add(T association) {
         // Locking the write operation to prevent other threads overwriting
         lock.writeLock().lock();
@@ -83,7 +106,7 @@ public class ConcurrentLRUCache<T> {
     }
 
     /**
-     * Helper method for testing
+     * Returns the popularity of a given element, 0 if the element does not exist
      */
     public int getPopularity(T key) {
         return hits.getOrDefault(key, 0);
