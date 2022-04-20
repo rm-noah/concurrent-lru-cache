@@ -1,5 +1,4 @@
 # Concurrent LRU Cache
-<hr>
 
 ## What is it?
 
