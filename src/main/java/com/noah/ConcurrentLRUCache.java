@@ -3,26 +3,26 @@ package com.noah;
 import java.util.*;
 import java.util.concurrent.locks.*;
 
-public class ForgettingMap {
+public class ConcurrentLRUCache<T> {
 
     /**
      * Using a LinkedHashSet remembers the order in which the elements are
      * added to the set and returns the elemnents in that order. Given it's a
      * Hash structure is provides fast lookup.
      */
-    private final LinkedHashSet<Integer> set;
+    private final LinkedHashSet<T> set;
 
     /**
      * Using a HashMap to map the popularity of keys means we can easily find
      * and increment the hits with a complexity of O(n)
      */
-    private final HashMap<Integer, Integer> hits;
+    private final HashMap<T, Integer> hits;
 
     private final int capacity;
 
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public ForgettingMap(int capacity) {
+    public ConcurrentLRUCache(int capacity) {
         this.capacity = capacity;
         this.set = new LinkedHashSet<>(capacity);
         this.hits = new HashMap<>();
@@ -37,7 +37,7 @@ public class ForgettingMap {
         }
     }
 
-    public Optional<Integer> find(int key) {
+    public Optional<T> find(T key) {
         // For concurrent projects we'll lock the read
         // Alternatively we could use the synchronised keyword which would
         // work fine but manually locking/unlocking gives us more control.
@@ -46,10 +46,11 @@ public class ForgettingMap {
         try {
             // Opted for Optionals as the spec doesn't specify a default value to return.
             // "null" could work, but it depends on what the project uses.
-            Optional<Integer> record = Optional.empty();
+            Optional<T> record = Optional.empty();
 
             if (set.contains(key)) {
                 if (hits.containsKey(key)) {
+                    lock.writeLock().lock();
                     hits.put(key, hits.get(key) + 1);
                 }
                 record = Optional.of(key);
@@ -58,16 +59,17 @@ public class ForgettingMap {
         } finally {
             // Must always unlock in the `finally` block to prevent deadlock
             lock.readLock().unlock();
+            lock.writeLock().unlock();
         }
     }
 
-    public void add(int association) {
+    public void add(T association) {
         // Locking the write operation to prevent other threads overwriting
         lock.writeLock().lock();
         try {
             if (set.size() == capacity) {
                 // Remove least used key
-                Optional<Integer> stale = findLeastFrequent();
+                Optional<T> stale = findLeastFrequent();
                 if (stale.isPresent()) {
                     set.remove(stale.get());
                     hits.remove(stale.get());
@@ -83,7 +85,7 @@ public class ForgettingMap {
     /**
      * Helper method for testing
      */
-    public int getPopularity(int key) {
+    public int getPopularity(T key) {
         return hits.getOrDefault(key, 0);
     }
 
@@ -93,10 +95,10 @@ public class ForgettingMap {
      *
      * @return Integer to remove, else an empty Optional
      */
-    private Optional<Integer> findLeastFrequent() {
+    private Optional<T> findLeastFrequent() {
         lock.readLock().lock();
         try {
-            Optional<Integer> min = Optional.empty();
+            Optional<T> min = Optional.empty();
             if (hits.isEmpty()) {
                 return min;
             }

@@ -8,7 +8,7 @@ public class MapTest {
 
     @Test
     public void testBasicStructure() {
-        ForgettingMap cache = new ForgettingMap(5);
+        ConcurrentLRUCache<Integer> cache = new ConcurrentLRUCache<>(5);
 
         cache.add(1);
         cache.add(2);
@@ -24,7 +24,7 @@ public class MapTest {
 
     @Test
     public void testReordering() {
-        ForgettingMap cache = new ForgettingMap(5);
+        ConcurrentLRUCache<Integer> cache = new ConcurrentLRUCache<>(5);
 
         cache.add(1);
         cache.add(2);
@@ -43,7 +43,7 @@ public class MapTest {
 
     @Test
     public void testRemovingLeastInterestingValue() {
-        ForgettingMap cache = new ForgettingMap(5);
+        ConcurrentLRUCache<Integer> cache = new ConcurrentLRUCache<>(5);
 
         cache.add(1);
         cache.add(2);
@@ -65,7 +65,7 @@ public class MapTest {
 
     @Test
     public void concurrencyTest() throws InterruptedException {
-        ForgettingMap cache = new ForgettingMap(5);
+        ConcurrentLRUCache<Integer> cache = new ConcurrentLRUCache<>(5);
 
         final Callable<String> task = () -> {
             cache.add(1);
