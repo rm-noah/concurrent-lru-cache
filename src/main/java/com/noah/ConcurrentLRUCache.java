@@ -60,6 +60,7 @@ public class ConcurrentLRUCache<T> {
         // Alternatively we could use the synchronised keyword which would
         // work fine but manually locking/unlocking gives us more control.
         lock.readLock().lock();
+        lock.writeLock().lock();
 
         try {
             // Opted for Optionals as the spec doesn't specify a default value to return.
@@ -68,7 +69,6 @@ public class ConcurrentLRUCache<T> {
 
             if (set.contains(key)) {
                 if (hits.containsKey(key)) {
-                    lock.writeLock().lock();
                     hits.put(key, hits.get(key) + 1);
                 }
                 record = Optional.of(key);
